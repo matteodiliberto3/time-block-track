@@ -5,6 +5,7 @@ import { useTimeBlocks } from '@/hooks/useTimeBlocks';
 import { formatDate } from '@/utils/dateUtils';
 import { TimeBlock } from '@/types';
 import { Clock } from 'lucide-react';
+import GoogleCalendarSync from './GoogleCalendarSync';
 
 const CalendarView = () => {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
@@ -30,6 +31,9 @@ const CalendarView = () => {
           />
         </CardContent>
       </Card>
+
+      {/* Google Calendar Sync */}
+      <GoogleCalendarSync />
 
       <Card>
         <CardContent className="p-4">

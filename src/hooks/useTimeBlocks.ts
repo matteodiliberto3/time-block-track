@@ -9,7 +9,17 @@ export const useTimeBlocks = () => {
   useEffect(() => {
     const stored = localStorage.getItem(STORAGE_KEY);
     if (stored) {
-      setTimeBlocks(JSON.parse(stored));
+      const blocks = JSON.parse(stored);
+      // Migrate old blocks to include new status field
+      const migratedBlocks = blocks.map((block: TimeBlock) => ({
+        ...block,
+        status: block.status || (block.completed ? 'completed' : 'planned'),
+        actualStartTime: block.actualStartTime,
+        actualEndTime: block.actualEndTime,
+        pausedDuration: block.pausedDuration || 0,
+        externalEvent: block.externalEvent || false,
+      }));
+      setTimeBlocks(migratedBlocks);
     }
   }, []);
 
