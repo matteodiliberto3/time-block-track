@@ -1,16 +1,19 @@
-import { useState } from 'react';
-import { Plus } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Plus, Bell, BellOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import TimeSlot from './TimeSlot';
 import TimeBlockCard from './TimeBlockCard';
 import CurrentTimeLine from './CurrentTimeLine';
 import TimeBlockModal from './TimeBlockModal';
 import { useTimeBlocks } from '@/hooks/useTimeBlocks';
+import { useNotifications } from '@/hooks/useNotifications';
 import { formatDate, getCurrentTime, parseTime } from '@/utils/dateUtils';
 import { TimeBlock } from '@/types';
+import { toast } from 'sonner';
 
 const TodayView = () => {
   const { getBlocksForDate, updateTimeBlock } = useTimeBlocks();
+  const { permission, requestPermission, scheduleNotifications } = useNotifications();
   const [selectedBlock, setSelectedBlock] = useState<TimeBlock | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
@@ -19,6 +22,26 @@ const TodayView = () => {
   const todayBlocks = getBlocksForDate(today);
   const currentTime = getCurrentTime();
   const currentHour = parseTime(currentTime).hours;
+
+  // Schedule notifications every minute
+  useEffect(() => {
+    if (permission === 'granted') {
+      scheduleNotifications(todayBlocks);
+      const interval = setInterval(() => {
+        scheduleNotifications(todayBlocks);
+      }, 60000);
+      return () => clearInterval(interval);
+    }
+  }, [todayBlocks, permission, scheduleNotifications]);
+
+  const handleRequestNotifications = async () => {
+    const granted = await requestPermission();
+    if (granted) {
+      toast.success('Notifiche abilitate');
+    } else {
+      toast.error('Permesso notifiche negato');
+    }
+  };
 
   const hours = Array.from({ length: 18 }, (_, i) => i + 6); // 6:00 to 23:00
 
@@ -49,9 +72,31 @@ const TodayView = () => {
               })}
             </p>
           </div>
-          <Button onClick={handleCreateNew} size="icon" className="rounded-full">
-            <Plus className="w-5 h-5" />
-          </Button>
+          <div className="flex gap-2">
+            {permission !== 'granted' && (
+              <Button 
+                onClick={handleRequestNotifications} 
+                size="icon" 
+                variant="outline"
+                className="rounded-full"
+              >
+                <BellOff className="w-5 h-5" />
+              </Button>
+            )}
+            {permission === 'granted' && (
+              <Button 
+                size="icon" 
+                variant="outline"
+                className="rounded-full"
+                disabled
+              >
+                <Bell className="w-5 h-5" />
+              </Button>
+            )}
+            <Button onClick={handleCreateNew} size="icon" className="rounded-full">
+              <Plus className="w-5 h-5" />
+            </Button>
+          </div>
         </div>
       </div>
 

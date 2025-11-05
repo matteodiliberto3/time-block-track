@@ -84,6 +84,7 @@ const TimeBlockModal = ({ isOpen, onClose, block, isCreating, date }: TimeBlockM
         subTasks,
         date,
         completed: false,
+        status: 'planned',
       };
       addTimeBlock(newBlock);
       toast.success('Attività creata');

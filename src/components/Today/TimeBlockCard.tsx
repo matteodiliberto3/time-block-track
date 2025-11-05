@@ -1,7 +1,8 @@
 import { TimeBlock } from '@/types';
 import { cn } from '@/lib/utils';
-import { Clock, CheckCircle2 } from 'lucide-react';
+import { Clock, CheckCircle2, Calendar } from 'lucide-react';
 import { timeToMinutes } from '@/utils/dateUtils';
+import TimerControls from './TimerControls';
 
 interface TimeBlockCardProps {
   block: TimeBlock;
@@ -40,7 +41,9 @@ const TimeBlockCard = ({ block, onClick }: TimeBlockCardProps) => {
         "hover:shadow-card-hover hover:scale-[1.02]",
         "text-white font-medium",
         getCategoryColor(block.category),
-        block.completed && "opacity-75"
+        block.status === 'completed' && "opacity-75",
+        block.status === 'active' && "ring-2 ring-white/50 shadow-lg",
+        block.externalEvent && "opacity-60 cursor-default border-dashed"
       )}
       style={{
         top: `${topOffset}px`,
@@ -50,14 +53,19 @@ const TimeBlockCard = ({ block, onClick }: TimeBlockCardProps) => {
     >
       <div className="flex items-start justify-between gap-2">
         <div className="flex-1 min-w-0">
-          <h3 className="text-sm font-semibold truncate">{block.title}</h3>
+          <div className="flex items-center gap-1">
+            <h3 className="text-sm font-semibold truncate">{block.title}</h3>
+            {block.externalEvent && <Calendar className="w-3 h-3 flex-shrink-0" />}
+          </div>
           <div className="flex items-center gap-1 mt-1 text-xs opacity-90">
             <Clock className="w-3 h-3" />
             <span>{block.startTime} - {block.endTime}</span>
           </div>
         </div>
-        {block.completed && (
-          <CheckCircle2 className="w-5 h-5 flex-shrink-0" />
+        {!block.externalEvent && (
+          <div onClick={(e) => e.stopPropagation()}>
+            <TimerControls block={block} />
+          </div>
         )}
       </div>
       

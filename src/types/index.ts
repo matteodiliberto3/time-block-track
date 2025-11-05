@@ -12,6 +12,8 @@ export interface SubTask {
   completed: boolean;
 }
 
+export type TimeBlockStatus = 'planned' | 'active' | 'paused' | 'completed';
+
 export interface TimeBlock {
   id: string;
   title: string;
@@ -21,6 +23,11 @@ export interface TimeBlock {
   subTasks: SubTask[];
   date: string; // YYYY-MM-DD format
   completed: boolean;
+  status: TimeBlockStatus;
+  actualStartTime?: string; // ISO timestamp
+  actualEndTime?: string;   // ISO timestamp
+  pausedDuration?: number;  // milliseconds
+  externalEvent?: boolean;  // if synced from external calendar
 }
 
 export const DEFAULT_CATEGORIES: Category[] = [
