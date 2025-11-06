@@ -66,7 +66,25 @@ serve(async (req) => {
     if (!accessToken || !date) {
       return new Response(
         JSON.stringify({ error: "Missing accessToken or date" }),
-        { status: 400, headers: { "Content-Type": "application/json" } }
+        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
+    // Validate date format (YYYY-MM-DD)
+    const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+    if (!dateRegex.test(date)) {
+      return new Response(
+        JSON.stringify({ error: "Invalid date format. Use YYYY-MM-DD" }),
+        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
+    // Validate date is parseable
+    const parsedDate = new Date(date);
+    if (isNaN(parsedDate.getTime())) {
+      return new Response(
+        JSON.stringify({ error: "Invalid date" }),
+        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
       );
     }
 

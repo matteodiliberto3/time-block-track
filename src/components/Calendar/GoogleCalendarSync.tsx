@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Calendar, RefreshCw } from 'lucide-react';
@@ -13,7 +13,24 @@ const GOOGLE_SCOPES = 'https://www.googleapis.com/auth/calendar.readonly';
 const GoogleCalendarSync = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isConnected, setIsConnected] = useState(false);
+  const [accessToken, setAccessToken] = useState<string | null>(null);
   const { addTimeBlock } = useTimeBlocks();
+
+  // Capture OAuth token from URL after redirect
+  useEffect(() => {
+    const hash = window.location.hash;
+    if (hash.includes('access_token')) {
+      const params = new URLSearchParams(hash.substring(1));
+      const token = params.get('access_token');
+      if (token) {
+        setAccessToken(token);
+        setIsConnected(true);
+        toast.success('Google Calendar connesso con successo');
+        // Clear token from URL for security
+        window.history.replaceState(null, '', window.location.pathname);
+      }
+    }
+  }, []);
 
   const handleGoogleAuth = () => {
     if (!GOOGLE_CLIENT_ID) {
@@ -78,8 +95,8 @@ const GoogleCalendarSync = () => {
           </Button>
         ) : (
           <Button 
-            onClick={() => handleSync('stored-token')} 
-            disabled={isLoading}
+            onClick={() => accessToken && handleSync(accessToken)} 
+            disabled={isLoading || !accessToken}
             className="w-full"
           >
             <RefreshCw className={`w-4 h-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
