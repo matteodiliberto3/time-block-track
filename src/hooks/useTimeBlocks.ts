@@ -1,48 +1,153 @@
 import { useState, useEffect } from 'react';
 import { TimeBlock } from '@/types';
-
-const STORAGE_KEY = 'chronofocus_timeblocks';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
+import { toast } from 'sonner';
 
 export const useTimeBlocks = () => {
+  const { user } = useAuth();
   const [timeBlocks, setTimeBlocks] = useState<TimeBlock[]>([]);
+  const [loading, setLoading] = useState(true);
 
+  // Fetch time blocks from database
   useEffect(() => {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) {
-      const blocks = JSON.parse(stored);
-      // Migrate old blocks to include new status field
-      const migratedBlocks = blocks.map((block: TimeBlock) => ({
-        ...block,
-        status: block.status || (block.completed ? 'completed' : 'planned'),
-        actualStartTime: block.actualStartTime,
-        actualEndTime: block.actualEndTime,
-        pausedDuration: block.pausedDuration || 0,
-        externalEvent: block.externalEvent || false,
-      }));
-      setTimeBlocks(migratedBlocks);
+    if (!user) {
+      setTimeBlocks([]);
+      setLoading(false);
+      return;
     }
-  }, []);
 
-  const saveTimeBlocks = (blocks: TimeBlock[]) => {
-    setTimeBlocks(blocks);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(blocks));
+    const fetchTimeBlocks = async () => {
+      const { data, error } = await supabase
+        .from('time_blocks')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('date', { ascending: true })
+        .order('start_time', { ascending: true });
+
+      if (error) {
+        console.error('Error fetching time blocks:', error);
+        toast.error('Errore nel caricamento delle attività');
+      } else {
+        const formatted: TimeBlock[] = data.map(block => ({
+          id: block.id,
+          title: block.title,
+          startTime: block.start_time,
+          endTime: block.end_time,
+          category: block.category as any,
+          date: block.date,
+          completed: block.completed,
+          status: block.status as any,
+          actualStartTime: block.actual_start_time || undefined,
+          actualEndTime: block.actual_end_time || undefined,
+          externalEvent: block.external_event || false,
+          subTasks: (block.sub_tasks as any) || [],
+        }));
+        setTimeBlocks(formatted);
+      }
+      setLoading(false);
+    };
+
+    fetchTimeBlocks();
+
+    // Set up realtime subscription
+    const channel = supabase
+      .channel('time_blocks_changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'time_blocks',
+          filter: `user_id=eq.${user.id}`,
+        },
+        () => {
+          fetchTimeBlocks();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user]);
+
+  const addTimeBlock = async (block: TimeBlock) => {
+    if (!user) {
+      toast.error('Devi effettuare l\'accesso');
+      return;
+    }
+
+    const { error } = await supabase
+      .from('time_blocks')
+      .insert({
+        user_id: user.id,
+        title: block.title,
+        start_time: block.startTime,
+        end_time: block.endTime,
+        category: block.category,
+        date: block.date,
+        completed: block.completed || false,
+        status: block.status || 'planned',
+        actual_start_time: block.actualStartTime || null,
+        actual_end_time: block.actualEndTime || null,
+        external_event: block.externalEvent || false,
+        external_id: block.externalEvent ? block.id : null,
+        sub_tasks: block.subTasks || [],
+      } as any);
+
+    if (error) {
+      console.error('Error adding time block:', error);
+      toast.error('Errore nell\'aggiunta dell\'attività');
+    }
   };
 
-  const addTimeBlock = (block: TimeBlock) => {
-    const newBlocks = [...timeBlocks, block];
-    saveTimeBlocks(newBlocks);
+  const updateTimeBlock = async (id: string, updates: Partial<TimeBlock>) => {
+    if (!user) {
+      toast.error('Devi effettuare l\'accesso');
+      return;
+    }
+
+    const updateData: any = {};
+    if (updates.title !== undefined) updateData.title = updates.title;
+    if (updates.startTime !== undefined) updateData.start_time = updates.startTime;
+    if (updates.endTime !== undefined) updateData.end_time = updates.endTime;
+    if (updates.category !== undefined) updateData.category = updates.category;
+    if (updates.date !== undefined) updateData.date = updates.date;
+    if (updates.completed !== undefined) updateData.completed = updates.completed;
+    if (updates.status !== undefined) updateData.status = updates.status;
+    if (updates.actualStartTime !== undefined) updateData.actual_start_time = updates.actualStartTime;
+    if (updates.actualEndTime !== undefined) updateData.actual_end_time = updates.actualEndTime;
+    if (updates.subTasks !== undefined) updateData.sub_tasks = updates.subTasks;
+
+    const { error } = await supabase
+      .from('time_blocks')
+      .update(updateData)
+      .eq('id', id)
+      .eq('user_id', user.id);
+
+    if (error) {
+      console.error('Error updating time block:', error);
+      toast.error('Errore nell\'aggiornamento dell\'attività');
+    }
   };
 
-  const updateTimeBlock = (id: string, updates: Partial<TimeBlock>) => {
-    const newBlocks = timeBlocks.map(block =>
-      block.id === id ? { ...block, ...updates } : block
-    );
-    saveTimeBlocks(newBlocks);
-  };
+  const deleteTimeBlock = async (id: string) => {
+    if (!user) {
+      toast.error('Devi effettuare l\'accesso');
+      return;
+    }
 
-  const deleteTimeBlock = (id: string) => {
-    const newBlocks = timeBlocks.filter(block => block.id !== id);
-    saveTimeBlocks(newBlocks);
+    const { error } = await supabase
+      .from('time_blocks')
+      .delete()
+      .eq('id', id)
+      .eq('user_id', user.id);
+
+    if (error) {
+      console.error('Error deleting time block:', error);
+      toast.error('Errore nell\'eliminazione dell\'attività');
+    }
   };
 
   const getBlocksForDate = (date: string) => {
@@ -55,5 +160,6 @@ export const useTimeBlocks = () => {
     updateTimeBlock,
     deleteTimeBlock,
     getBlocksForDate,
+    loading,
   };
 };

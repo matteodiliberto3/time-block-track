@@ -1,6 +1,10 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { DEFAULT_CATEGORIES } from '@/types';
-import { Palette, Info } from 'lucide-react';
+import { Palette } from 'lucide-react';
+import NotificationSettings from './NotificationSettings';
+import DataManagement from './DataManagement';
+import AccountSettings from './AccountSettings';
+import GoogleCalendarSync from '../Calendar/GoogleCalendarSync';
 
 const SettingsView = () => {
   return (
@@ -9,6 +13,18 @@ const SettingsView = () => {
         <h1 className="text-2xl font-bold">Impostazioni</h1>
         <p className="text-sm text-muted-foreground">Configura la tua app</p>
       </div>
+
+      {/* Account */}
+      <AccountSettings />
+
+      {/* Notifications */}
+      <NotificationSettings />
+
+      {/* Google Calendar */}
+      <GoogleCalendarSync />
+
+      {/* Data Management */}
+      <DataManagement />
 
       {/* Categories */}
       <Card>
@@ -34,30 +50,6 @@ const SettingsView = () => {
               </div>
             </div>
           ))}
-        </CardContent>
-      </Card>
-
-      {/* About */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Info className="w-5 h-5" />
-            Info
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-2 text-sm">
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">Versione</span>
-            <span className="font-medium">1.0.0</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">App</span>
-            <span className="font-medium">ChronoFocus</span>
-          </div>
-          <p className="text-muted-foreground pt-4">
-            ChronoFocus ti aiuta a pianificare la tua giornata ora per ora e 
-            a visualizzare come utilizzi il tuo tempo attraverso grafici dettagliati.
-          </p>
         </CardContent>
       </Card>
     </div>
