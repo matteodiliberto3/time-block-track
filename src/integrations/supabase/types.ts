@@ -94,6 +94,7 @@ export type Database = {
           external_event: boolean | null
           external_id: string | null
           id: string
+          paused_duration: number | null
           start_time: string
           status: string | null
           sub_tasks: Json | null
@@ -112,6 +113,7 @@ export type Database = {
           external_event?: boolean | null
           external_id?: string | null
           id?: string
+          paused_duration?: number | null
           start_time: string
           status?: string | null
           sub_tasks?: Json | null
@@ -130,6 +132,7 @@ export type Database = {
           external_event?: boolean | null
           external_id?: string | null
           id?: string
+          paused_duration?: number | null
           start_time?: string
           status?: string | null
           sub_tasks?: Json | null
